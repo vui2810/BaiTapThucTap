@@ -1,0 +1,185 @@
+﻿@model ViewModelBai7
+<form asp-action="Add" method="post" id="mainForm">
+    <h2>Thêm Sản Phẩm</h2>
+    <hr />
+
+    <div class="form-group">
+        <label>Số Phiếu Nhập</label>
+        <input asp-for="Bai7.So_Phieu_Nhap_Kho" class="form-control" />
+        <span asp-validation-for="Bai7.So_Phieu_Nhap_Kho" class="text-danger"></span>
+    </div>
+
+    <!-- Form để thêm sản phẩm mới -->
+    <div id="productFormsContainer">
+        <!-- Các sản phẩm sẽ được thêm động vào đây -->
+    </div>
+
+    <div class="row">
+        <!-- Nút thêm sản phẩm mới -->
+        <div class="col-md-6">
+            <button type="button" id="addProductForm" class="btn btn-secondary">Thêm Sản Phẩm</button>
+        </div>
+        <!-- Nút lưu -->
+        <div class="col-md-6 text-right" id="saveButtons" style="display: none;">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+</form>
+
+<!-- Danh sách các sản phẩm đã thêm --> 
+<div id="addedProductsContainer">
+    <h3>Sản Phẩm Đã Thêm</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Số Sản Phẩm</th>
+                <th>Sản Phẩm</th>
+                <th>Số Lượng</th>
+                <th>Đơn Giá</th>
+                <th>Ngày Nhập Kho</th>
+                <th>Kho</th>
+                <th>Nhà Cung Cấp</th>
+                <th>Ghi Chú</th>
+            </tr>
+        </thead>
+        <tbody id="productList">
+            <!-- Sản phẩm sẽ được hiển thị ở đây -->
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let productCount = 0;  // Biến đếm số lượng sản phẩm đã thêm
+
+            // Khi nhấn nút "Thêm Sản Phẩm"
+            $("#addProductForm").click(function () {
+                productCount++;
+
+                // Tạo form sản phẩm mới
+                let newProductForm = `
+                    <div class="form-group pb-2" id="product-form-${productCount}">
+                        <label>Sản Phẩm</label>
+                        <select name="Bai7_2[${productCount}].San_Pham_ID" class="form-control" id="San_Pham_ID{productCount}">
+                            <option disabled selected>==Chọn loại sản phẩm==</option>
+                            @foreach (var item in ViewBag.SPList) {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                        <span class="text-danger" id="San_Pham_ID_${productCount}-error"></span>
+                    </div>
+
+                    <div class="form-group pb-2">
+                        <label>Kho</label>
+                        <select name="Bai7[${productCount}].Kho_ID" class="form-control" id="Kho_ID_${productCount}">
+                            <option disabled selected>==Chọn Kho==</option>
+                            @foreach (var item in ViewBag.KhoList) {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                        <span class="text-danger" id="Kho_ID_${productCount}-error"></span>
+                    </div>
+
+                    <div class="form-group pb-2">
+                        <label>Nhà cung cấp</label>
+                        <select name="Bai7[${productCount}].NCC_ID" class="form-control" id="NCC_ID_${productCount}">
+                            <option disabled selected>==Chọn nhà cung cấp==</option>
+                            @foreach (var item in ViewBag.NCCList) {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                        <span class="text-danger" id="NCC_ID_${productCount}-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ngày Nhập</label>
+                        <input type="date" class="form-control" name="Bai7[${productCount}].Ngay_Nhap_Kho" id="Ngay_Nhap_Kho_${productCount}" />
+                        <span class="text-danger" id="Ngay_Nhap_Kho_${productCount}-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số Lượng</label>
+                        <input type="number" class="form-control" name="Bai7_2[${productCount}].SL_Nhap" id="SL_Nhap_${productCount}" />
+                        <span class="text-danger" id="SL_Nhap_${productCount}-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Đơn giá</label>
+                        <input type="number" class="form-control" name="Bai7_2[${productCount}].Don_Gia_Nhap" id="Don_Gia_Nhap_${productCount}" />
+                        <span class="text-danger" id="Don_Gia_Nhap_${productCount}-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ghi Chú</label>
+                        <input type="text" class="form-control" name="Bai7[${productCount}].Ghi_Chu" id="Ghi_Chu_${productCount}" />
+                        <span class="text-danger" id="Ghi_Chu_${productCount}-error"></span>
+                    </div>
+
+                    <button type="button" class="btn btn-danger" onclick="removeProduct(${productCount})">Xóa</button>
+                    <br><br>
+                `;
+
+                // Thêm form sản phẩm mới vào container
+                $("#productFormsContainer").append(newProductForm);
+
+                // Hiển thị thông tin sản phẩm đã thêm trong danh sách
+                let productInfo = `
+                    <tr id="product-${productCount}">
+                        <td>${productCount}</td>
+                        <td><span id="product-name-${productCount}"></span></td>
+                        <td><span id="product-quantity-${productCount}"></span></td>
+                        <td><span id="product-price-${productCount}"></span></td>
+                        <td><span id="product-date-${productCount}"></span></td>
+                        <td><span id="product-kho-${productCount}"></span></td>
+                        <td><span id="product-ncc-${productCount}"></span></td>
+                        <td><span id="product-notes-${productCount}"></span></td>
+                    </tr>
+                `;
+
+                // Thêm vào danh sách sản phẩm đã thêm
+                $("#productList").append(productInfo);
+
+                // Cập nhật thông tin khi form thay đổi
+                $(`#San_Pham_ID_${productCount}`).change(function () {
+                    $(`#product-name-${productCount}`).text($(this).find("option:selected").text());
+                });
+
+                $(`#Kho_ID_${productCount}`).change(function () {
+                    $(`#product-kho-${productCount}`).text($(this).find("option:selected").text());
+                });
+
+                $(`#SL_Nhap_${productCount}`).change(function () {
+                    $(`#product-quantity-${productCount}`).text($(this).val());
+                });
+
+                $(`#Don_Gia_Nhap_${productCount}`).change(function () {
+                    $(`#product-price-${productCount}`).text($(this).val());
+                });
+
+                $(`#Ngay_Nhap_Kho_${productCount}`).change(function () {
+                    $(`#product-date-${productCount}`).text($(this).val());
+                });
+
+                $(`#NCC_ID_${productCount}`).change(function () {
+                    $(`#product-ncc-${productCount}`).text($(this).find("option:selected").text());
+                });
+
+                $(`#Ghi_Chu_${productCount}`).change(function () {
+                    $(`#product-notes-${productCount}`).text($(this).val());
+                });
+
+                // Khi có sản phẩm được thêm vào, hiển thị các nút Lưu và Back to List
+                $("#saveButtons").show();
+            });
+
+            // Hàm xóa sản phẩm
+            window.removeProduct = function (productId) {
+                $(`#product-form-${productId}`).remove();  // Xóa form sản phẩm
+                $(`#product-${productId}`).remove();  // Xóa sản phẩm trong danh sách
+            };
+        });
+    </script>
+}
